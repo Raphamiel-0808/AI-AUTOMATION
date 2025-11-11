@@ -1,0 +1,39 @@
+# Credentials and sensitive data
+credentials.json
+.env
+.env.local
+.env.*.local
+
+# n8n specific
+node_modules/
+.n8n/
+.cache/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# API keys and secrets (in case they end up in files)
+*apikey*
+*api_key*
+*secret*
+*.pem
+*.key
