@@ -1,0 +1,346 @@
+{
+  "name": "Trending News Automation",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "e8a07ae8-8a3e-4a7f-8c1b-1e2f3a4b5c6d",
+      "name": "Start",
+      "type": "n8n-nodes-base.start",
+      "typeVersion": 1,
+      "position": [50, 300]
+    },
+    {
+      "parameters": {
+        "triggerId": "6be4e8e7-9c5a-4b2d-8f1a-3e7c9b2d4a6f",
+        "unit": "hours",
+        "interval": 6
+      },
+      "id": "trigger-schedule",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [50, 450]
+    },
+    {
+      "parameters": {
+        "url": "https://newsapi.org/v2/top-headlines",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "queryAuth",
+        "queryAuth": {
+          "key": "apiKey",
+          "value": "={{ $credentials.newsApiKey }}"
+        },
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "country",
+              "value": "us"
+            },
+            {
+              "name": "pageSize",
+              "value": "20"
+            },
+            {
+              "name": "sortBy",
+              "value": "publishedAt"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "fetch-news-api",
+      "name": "Fetch Trending News",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [250, 400]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "expression": "={{ $json.articles.length > 0 }}"
+      },
+      "id": "check-articles",
+      "name": "Check If Articles Found",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [450, 400]
+    },
+    {
+      "parameters": {
+        "mode": "simple",
+        "loopOver": "articles"
+      },
+      "id": "loop-articles",
+      "name": "Loop Through Articles",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 1,
+      "position": [650, 350]
+    },
+    {
+      "parameters": {
+        "mode": "expression",
+        "nodeVersion": 1,
+        "expression": "={\n  \"title\": $json.article.title,\n  \"description\": $json.article.description,\n  \"url\": $json.article.url,\n  \"imageUrl\": $json.article.urlToImage,\n  \"source\": $json.article.source.name,\n  \"publishedAt\": $json.article.publishedAt,\n  \"author\": $json.article.author,\n  \"content\": $json.article.content\n}"
+      },
+      "id": "transform-article",
+      "name": "Transform Article Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.3,
+      "position": [850, 350]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "expression": "={{ $json.source && $json.source.toLowerCase().includes('tech') || $json.title.toLowerCase().includes('technology') }}"
+      },
+      "id": "filter-tech-news",
+      "name": "Filter Tech News (Optional)",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1050, 350]
+    },
+    {
+      "parameters": {
+        "documentId": "={{ $json.title.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 50) }}",
+        "columns": {
+          "mappingMode": "defineByList",
+          "value": [
+            {
+              "header": "Title",
+              "key": "title"
+            },
+            {
+              "header": "Description",
+              "key": "description"
+            },
+            {
+              "header": "URL",
+              "key": "url"
+            },
+            {
+              "header": "Source",
+              "key": "source"
+            },
+            {
+              "header": "Published At",
+              "key": "publishedAt"
+            },
+            {
+              "header": "Author",
+              "key": "author"
+            }
+          ]
+        }
+      },
+      "id": "append-to-sheet",
+      "name": "Append to Google Sheets (Optional)",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 2.3,
+      "position": [1250, 350],
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "channel": "#trending-news",
+        "text": "=**{{ $json.title }}**\n\n_{{ $json.description }}_\n\nSource: {{ $json.source }} | Published: {{ $json.publishedAt }}\n\n<{{ $json.url }}|Read More>",
+        "otherOptions": {}
+      },
+      "id": "send-to-slack",
+      "name": "Send to Slack (Optional)",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2,
+      "position": [1250, 500],
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://webhook.site/your-webhook-id",
+        "sendBody": true,
+        "bodyParametersJson": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "id": "webhook-output",
+      "name": "Send to Webhook (Optional)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1250, 600],
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "functionCode": "return items.map(item => ({\n  ...item.json,\n  processedAt: new Date().toISOString(),\n  sentiment: item.json.title.length > 100 ? 'detailed' : 'brief'\n}));"
+      },
+      "id": "code-processor",
+      "name": "Process Articles (Code)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1050, 500]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "expression": "={{ $items(0)[0].statusCode === 200 }}"
+      },
+      "id": "check-success",
+      "name": "Check Success",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [450, 600]
+    },
+    {
+      "parameters": {
+        "message": "Error fetching news. Please check the API key and URL."
+      },
+      "id": "error-notification",
+      "name": "Error Notification",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [650, 700]
+    }
+  ],
+  "connections": {
+    "Start": {
+      "main": [
+        [
+          {
+            "node": "Schedule Trigger",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Fetch Trending News",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Trending News": {
+      "main": [
+        [
+          {
+            "node": "Check Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Success": {
+      "main": [
+        [
+          {
+            "node": "Check If Articles Found",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Error Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check If Articles Found": {
+      "main": [
+        [
+          {
+            "node": "Loop Through Articles",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Error Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Through Articles": {
+      "main": [
+        [
+          {
+            "node": "Transform Article Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transform Article Data": {
+      "main": [
+        [
+          {
+            "node": "Filter Tech News (Optional)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Tech News (Optional)": {
+      "main": [
+        [
+          {
+            "node": "Code Processor",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code Processor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code Processor": {
+      "main": [
+        [
+          {
+            "node": "Append to Google Sheets (Optional)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send to Slack (Optional)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send to Webhook (Optional)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "c3d1e4f7-8a9b-4c2e-9f1a-7b3c5d8e2f4a",
+  "meta": {
+    "instanceId": "6eaf90e4d94adb87c7b8e8d9c1f2a3b4",
+    "templateId": "trending-news-automation-v1"
+  },
+  "tags": ["news", "automation", "trending", "newsapi"],
+  "pinData": {}
+}

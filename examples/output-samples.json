@@ -1,0 +1,72 @@
+{
+  "workflowName": "Trending News Automation",
+  "executionTimestamp": "2024-01-15T14:30:00Z",
+  "articlesProcessed": 20,
+  "executionTime": "2.5s",
+  "sampleArticles": [
+    {
+      "title": "Breaking: New Technology Revolutionizes AI Industry",
+      "description": "Scientists announce breakthrough in artificial intelligence research...",
+      "url": "https://example-news.com/article/ai-breakthrough",
+      "imageUrl": "https://example-news.com/images/ai-tech.jpg",
+      "source": "Tech Daily",
+      "publishedAt": "2024-01-15T14:00:00Z",
+      "author": "Jane Smith",
+      "content": "In a landmark announcement today, researchers unveiled a new approach to machine learning...",
+      "processedAt": "2024-01-15T14:30:15Z",
+      "sentiment": "detailed"
+    },
+    {
+      "title": "Market Update: Tech Stocks Rally on Innovation News",
+      "description": "Financial markets respond positively to recent technology announcements...",
+      "url": "https://example-news.com/article/market-tech",
+      "imageUrl": "https://example-news.com/images/market.jpg",
+      "source": "Finance Weekly",
+      "publishedAt": "2024-01-15T13:45:00Z",
+      "author": "John Davis",
+      "content": "Technology stocks showed strong performance today following industry announcements...",
+      "processedAt": "2024-01-15T14:30:16Z",
+      "sentiment": "detailed"
+    },
+    {
+      "title": "New Startup Raises $50M in Series B Funding",
+      "description": "Emerging technology company secures major investment round...",
+      "url": "https://example-news.com/article/startup-funding",
+      "imageUrl": "https://example-news.com/images/startup.jpg",
+      "source": "Venture Beat",
+      "publishedAt": "2024-01-15T13:30:00Z",
+      "author": "Mike Johnson",
+      "content": "A promising startup focused on cloud infrastructure announced today that it has raised...",
+      "processedAt": "2024-01-15T14:30:17Z",
+      "sentiment": "detailed"
+    }
+  ],
+  "outputChannels": {
+    "googleSheets": {
+      "spreadsheetId": "1ABC123DEF456",
+      "sheetName": "Trending News",
+      "rowsAppended": 20,
+      "columnsUsed": [
+        "Title",
+        "Description",
+        "URL",
+        "Source",
+        "Published At",
+        "Author"
+      ],
+      "status": "success"
+    },
+    "slack": {
+      "channel": "#trending-news",
+      "messagesPosted": 20,
+      "status": "success"
+    },
+    "webhook": {
+      "endpoint": "https://webhook.example.com/news",
+      "deliveredArticles": 20,
+      "status": "success"
+    }
+  },
+  "errors": [],
+  "nextExecution": "2024-01-15T20:30:00Z"
+}
