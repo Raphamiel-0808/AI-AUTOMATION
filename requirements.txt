@@ -1,0 +1,5 @@
+# Core dependencies (all built-in Python modules)
+# No external dependencies required for basic functionality
+
+# Optional: For loading .env files more easily
+python-dotenv==1.0.0
